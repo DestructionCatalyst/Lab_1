@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <locale.h>
+//#include "DynamicArray.h"
 
+//Массив count элементов размером element_size
 struct Form
 {
 	void* buffer;
@@ -9,6 +11,7 @@ struct Form
 	int element_size;
 };
 
+//Динамический массив укзаателей, в данный момент содержащий count элементов размером el_size
 struct DynArray
 {
 	void** elem;
@@ -17,12 +20,13 @@ struct DynArray
 	int count;
 };
 
+
 //Установить элемент Form a с индексом index на значение value
 void set_element(struct Form* a, int index, void* value) {
 	void* p = (void*)((char*)a->buffer + a->element_size * index);
 	memcpy(p, value, a->element_size);
 }
-
+//Получить укащатель на элемент Form a с индексом index
 void* get_element(struct Form* a, int index) {
 	return (void*)(((char*)a->buffer)+index*(a->element_size));
 }
@@ -49,7 +53,7 @@ struct Form* CreateFloatLinearForm(int length, double* values) {
 	}
 	return form;
 }
-
+//Получить указатель на элемент Form a с индексом index в виде double*
 double* get(struct Form* a, int index) {
 	return (double*)get_element(a, index);
 }
@@ -58,7 +62,7 @@ double* get(struct Form* a, int index) {
 void PrintLinearForm(struct Form* form) {
 
 	for (int i = 0; i < form->count; i++) {
-		if (((double*)form->buffer)[i]) {
+		if (get(form,i)) {
 			if (i == 0)
 				printf("%lg", *get(form,i));
 			else printf("%lg*x%d", *get(form, i), i);
@@ -81,12 +85,18 @@ struct DynArray* CreateDynArray(void* first) {
 	return a;
 }
 
-void* getArrayElement(struct DynArray* a, int index) {
+//Получает указатель с индексом Index из динамического массива a
+void* getArray(struct DynArray* a, int index) {
 	return (void*)(((char*)a->elem) + index * (a->el_size));
 }
 
+int getCount(struct DynArray* a) {
+	return a->count;
+}
+
+//Получает указатель с индексом Index из динамического массива a в виде Form*
 struct Form* getForm(struct DynArray* a, int index) {
-	return (struct Form*)getArrayElement(a, index);
+	return (struct Form*)getArray(a, index);
 }
 
 //Добавить в дин.массив a элемент new
@@ -105,7 +115,7 @@ void Add(struct DynArray* a, void* new) {
 
 //Напечатать лин. формы из дин.массива a
 void PrintForms(struct DynArray* a) {
-	for (int i = 1; i < a->count; i++) {
+	for (int i = 1; i < getCount(a); i++) {
 		printf("%d. ", i);
 		PrintLinearForm(getForm(a, i));
 	}
@@ -134,7 +144,7 @@ struct Form* Multiply(struct Form* a, double num) {
 	}
 	return c;
 }
-
+//Вычисляет значение линейной формы a при значениях аргументов args
 double Calculate(struct Form* a, double* args) {
 	double rez = *get(a, 0);
 	for (int i = 1; i < a->count; i++) {
@@ -177,9 +187,9 @@ int main() {
 		else if (strcmp(command, "print") == 0) {
 			//2 аргумент - номер выводимого многочлена, если 0 - все сразу
 			int n = 0;
-			scanf("%d", n);
+			scanf("%d", &n);
 			if (n <= 0) PrintForms(arr);
-			else PrintLinearForm(arr->elem[n]);
+			else PrintLinearForm(getForm(arr, n));
 		}
 		else if (strcmp(command, "sum") == 0) {
 			int arg2 = 0,arg3 = 0;//Номера слагаемых
